@@ -2,9 +2,15 @@
 
 TIMEOUT=2
 
-MONGO=0
-REDIS=0
-ELASTIC=0
+if [ -z $MONGO ]; then
+	MONGO=0
+fi
+if [ -z $REDIS ]; then
+	REDIS=0
+fi
+if [ -z $ELASTIC ]; then
+	ELASTIC=0
+fi
 while [ $MONGO -eq 0 ] || [ $ELASTIC -eq 0 ] || [ $REDIS -eq 0 ]
 do
 	if [ $MONGO -eq 0 ] ; then

@@ -24,7 +24,6 @@ backend:
    - redis
    - elastic
   environment:
-   - PUBLICAPI_MONGO_URI=mongodb://mongodb:27017/
    - MONGO_URI=mongodb://mongodb:27017/test
    - LEGAL_ARCHIVE_URI=mongodb://mongodb:27017/test
    - ELASTICSEARCH_URL=http://elastic:9200
@@ -44,16 +43,16 @@ backend:
 publicapi:
   build: server/
   dockerfile: Dockerfile-publicapi
-  command: python3 publicapi.py
+  command: sh /opt/superdesk/scripts/fig_wrapper.sh python3 publicapi.py
   links:
    - mongodb
    - elastic
   environment:
-   - PUBLICAPI_MONGO_URI=mongodb://mongodb:27017
+   - REDIS=1
+   - PUBLICAPI_MONGO_URI=mongodb://mongodb:27017/publicapi
    - MONGO_URI=mongodb://mongodb:27017/publicapi
-   - LEGAL_ARCHIVE_URI=mongodb://mongodb:27017/test
    - ELASTICSEARCH_URL=http://elastic:9200
-   - ELASTICSEARCH_INDEX
+   - ELASTICSEARCH_INDEX=publicapi
   volumes:
    - server:/opt/superdesk
   ports:
