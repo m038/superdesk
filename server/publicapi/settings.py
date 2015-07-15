@@ -32,6 +32,7 @@ def env(variable, fallback_value=None):
         else:
             return env_value
 
+MONGO_DBNAME = 'publicapi'  # needed for non-docker installations
 PUBLICAPI_MONGO_DBNAME = 'publicapi'
 PUBLICAPI_MONGO_URI = os.environ.get('PUBLICAPI_MONGO_URI')
 MONGO_DBNAME = env('MONGO_DBNAME', 'publicapi')
