@@ -1304,16 +1304,14 @@
                         return sendAuthoring(deskId, stageId, scope.selectedMacro);
                     } else if (scope.mode === 'archive') {
                         return sendContent(deskId, stageId, scope.selectedMacro, open);
+                    } else if (scope.config) {
+                        return scope.config.resolve({
+                            desk: deskId,
+                            stage: stageId,
+                            macro: scope.selectedMacro ? scope.selectedMacro.name : null
+                        });
                     } else if (scope.mode === 'ingest') {
-                        if (scope.config) {
-                            scope.config.resolve({
-                                desk: deskId,
-                                stage: stageId,
-                                macro: scope.selectedMacro ? scope.selectedMacro.name : null
-                            });
-                        } else {
-                            return sendIngest(deskId, stageId, scope.selectedMacro, open);
-                        }
+                        return sendIngest(deskId, stageId, scope.selectedMacro, open);
                     }
                 }
 
@@ -1599,6 +1597,7 @@
         .directive('sdAuthoringSidebar', AuthoringSidebarDirective)
         .directive('sdAuthoringContainer', AuthoringContainerDirective)
         .directive('sdAuthoringEmbedded', AuthoringEmbeddedDirective)
+        .directive('sdHeaderInfo', headerInfoDirective)
 
         .config(['superdeskProvider', function(superdesk) {
             superdesk
@@ -1773,6 +1772,26 @@
                         scope.action = 'edit';
                     });
                 };
+            }
+        };
+    }
+
+    headerInfoDirective.$inject = ['metadata', 'familyService'];
+    function headerInfoDirective(metadata, familyService) {
+        return {
+            templateUrl: 'scripts/superdesk-authoring/views/header-info.html',
+            link: function (scope, elem, attrs) {
+                scope.$watch('item', function (item) {
+                    if (!item) {
+                        return;
+                    }
+
+                    scope.loaded = true;
+                    familyService.fetchItems(scope.item.family_id || scope.item._id, scope.item)
+                            .then(function (items) {
+                                scope.relatedItems = items;
+                            });
+                });
             }
         };
     }
