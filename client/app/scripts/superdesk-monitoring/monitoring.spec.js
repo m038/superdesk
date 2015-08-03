@@ -64,5 +64,35 @@ describe('monitoring', function() {
             var criteria = cards.criteria(card);
             expect(criteria.source.query.filtered.query.query_string.query).toBe('foo');
         }));
+
+        it('can get criteria for spike desk', inject(function(cards) {
+            var card = {type: 'spike'};
+            var criteria = cards.criteria(card);
+            expect(criteria.source.query.filtered.filter.and).toContain({
+                term: {'task.desk': card._id}
+            });
+            expect(criteria.source.query.filtered.filter.and).toContain({
+                term: {'state': 'spiked'}
+            });
+        }));
+
+        it('can get criteria for stage with search', inject(function(cards) {
+            var card = {_id: '123', query: 'test'};
+            var criteria = cards.criteria(card);
+            expect(criteria.source.query.filtered.query.query_string.query).toBe('test');
+        }));
+
+        it('can get criteria for personal with search', inject(function(cards, session) {
+            var card = {type: 'personal', query: 'test'};
+            session.identity = {_id: 'foo'};
+            var criteria = cards.criteria(card);
+            expect(criteria.source.query.filtered.query.query_string.query).toBe('test');
+        }));
+
+        it('can get criteria for spike with search', inject(function(cards) {
+            var card = {_id: '123', type: 'spike', query: 'test'};
+            var criteria = cards.criteria(card);
+            expect(criteria.source.query.filtered.query.query_string.query).toBe('test');
+        }));
     });
 });

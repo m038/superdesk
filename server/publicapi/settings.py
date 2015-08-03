@@ -32,15 +32,15 @@ def env(variable, fallback_value=None):
         else:
             return env_value
 
-PUBLICAPI_MONGO_DBNAME = 'publicapi'
-#PUBLICAPI_MONGO_URI = os.environ.get('PUBLICAPI_MONGO_URI')
-MONGO_DBNAME = env('MONGO_DBNAME', 'publicapi')
-MONGO_URI = env('MONGO_URI', 'mongodb://mongodb/%s' % MONGO_DBNAME)
-ELASTICSEARCH_URL = env('ELASTICSEARCH_URL', 'http://elastic:9200')
-ELASTICSEARCH_INDEX = env('ELASTICSEARCH_INDEX', 'publicapi')
-PUBLICAPI_MONGO_URI = os.environ.get(
-    'PUBLICAPI_MONGO_URI',
-    'mongodb://localhost/' + PUBLICAPI_MONGO_DBNAME)
+#PUBLICAPI_MONGO_DBNAME = 'publicapi'
+#PUBLICAPI_MONGO_URI = os.environ.get(
+#    'PUBLICAPI_MONGO_URI',
+#    'mongodb://localhost/' + PUBLICAPI_MONGO_DBNAME)
+MONGO_DBNAME = 'publicapi'
+MONGO_URI = env('MONGO_URI', 'mongodb://localhost/%s' % MONGO_DBNAME)
+ELASTICSEARCH_URL = env('ELASTICSEARCH_URL', 'http://localhost:9200')
+ELASTICSEARCH_INDEX = env('ELASTICSEARCH_INDEX', MONGO_DBNAME)
+ELASTIC_DATE_FORMAT = '%Y-%m-%d'
 
 INSTALLED_APPS = [
     'publicapi.items',

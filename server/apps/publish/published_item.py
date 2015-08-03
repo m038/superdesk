@@ -30,6 +30,7 @@ from superdesk.utc import utcnow, get_expiry_date
 from superdesk import get_resource_service
 
 logger = logging.getLogger(__name__)
+LAST_PUBLISHED_VERSION = 'last_published_version'
 
 
 class PublishedItemResource(Resource):
@@ -49,11 +50,23 @@ class PublishedItemResource(Resource):
             'type': 'string',
             'mapping': not_analyzed
         },
-        'last_publish_action': {'type': 'string'}
+
+        # last_published_version field is set to true for last published version of the item in the published collection
+        # and for the older version is set to false. This field is used to display the last version of the digital copy
+        # in the published view.
+        LAST_PUBLISHED_VERSION: {
+            'type': 'boolean',
+            'default': True
+        },
+        'rewritten_by': {
+            'type': 'string',
+            'mapping': not_analyzed,
+            'nullable': True
+        }
     }
 
     schema = item_schema(published_item_fields)
-    etag_ignore_fields = [config.ID_FIELD, 'last_publish_action', 'highlights', 'item_id']
+    etag_ignore_fields = [config.ID_FIELD, 'highlights', 'item_id', LAST_PUBLISHED_VERSION]
 
     privileges = {'POST': 'publish_queue', 'PATCH': 'publish_queue'}
 
@@ -85,16 +98,19 @@ class PublishedItemService(BaseService):
         """
 
         for doc in docs:
-            doc['item_id'] = doc[config.ID_FIELD]
             doc['_created'] = utcnow()
-            doc['versioncreated'] = utcnow()
+            self.set_defaults(doc)
 
-            self.__set_published_item_expiry(doc)
+    def set_defaults(self, doc):
+        doc['item_id'] = doc[config.ID_FIELD]
+        doc['versioncreated'] = utcnow()
 
-            doc.pop(config.ID_FIELD, None)
-            doc.pop('lock_user', None)
-            doc.pop('lock_time', None)
-            doc.pop('lock_session', None)
+        self.__set_published_item_expiry(doc)
+
+        doc.pop(config.ID_FIELD, None)
+        doc.pop('lock_user', None)
+        doc.pop('lock_time', None)
+        doc.pop('lock_session', None)
 
     def enhance_with_archive_items(self, items):
         if items:
@@ -179,9 +195,50 @@ class PublishedItemService(BaseService):
         except:
             return []
 
-    def is_published_before(self, item_id):
-        item = super().find_one(req=None, _id=item_id)
-        return 'last_publish_action' in item
+    def get_rewritten_take_packages_per_event(self, event_id):
+        """ Returns all the published and rewritten take stories for the same event """
+        try:
+            query = {'query':
+                     {'filtered':
+                      {'filter':
+                       {'bool':
+                        {'must': [
+                            {'term': {'package_type': 'takes'}},
+                            {'term': {'event_id': event_id}},
+                            {'exists': {'field': 'rewritten_by'}}
+                        ]}}}}}
+
+            request = ParsedRequest()
+            request.args = {'source': json.dumps(query)}
+            return super().get(req=request, lookup=None)
+        except:
+            return []
+
+    def get_rewritten_items_by_event_story(self, event_id, rewrite_id):
+        """ Returns all the published and rewritten stories for the given event and rewrite_id"""
+        try:
+            query = {'query':
+                     {'filtered':
+                      {'filter':
+                       {'bool':
+                        {'must': [
+                            {'term': {'event_id': event_id}},
+                            {'term': {'rewritten_by': rewrite_id}}
+                        ]}}}}}
+
+            request = ParsedRequest()
+            request.args = {'source': json.dumps(query)}
+            return super().get(req=request, lookup=None)
+        except:
+            return []
+
+    def is_rewritten_before(self, item_id):
+        """ Checks if the published item is rewritten before
+        :param _id: item_id of the published item
+        :return: True is it is rewritten before
+        """
+        doc = self.find_one(req=None, item_id=item_id)
+        return doc and 'rewritten_by' in doc and doc['rewritten_by']
 
     def update_published_items(self, _id, field, state):
         items = self.get_other_published_items(_id)

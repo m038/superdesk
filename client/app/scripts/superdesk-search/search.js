@@ -225,6 +225,11 @@
                 this.filter({not: {term: {state: 'spiked'}}});
             }
 
+            // remove the older version of digital package as part for base filtering.
+            this.filter({not: {and: [{term: {_type: 'published'}},
+                {term: {package_type: 'takes'}},
+                {term: {last_published_version: false}}]}});
+
             buildFilters(params, this);
         }
 
@@ -1227,8 +1232,26 @@
                 controller: 'MultiActionBar',
                 controllerAs: 'action',
                 templateUrl: asset.templateUrl('superdesk-search/views/multi-action-bar.html'),
+                scope: true,
                 link: function(scope) {
                     scope.multi = multi;
+                    scope.$watch(multi.getItems, detectType);
+
+                    /**
+                     * Detects type of all selected items and assign it to scope,
+                     * but only when it's same for all of them.
+                     *
+                     * @param {Array} items
+                     */
+                    function detectType(items) {
+                        var types = {};
+                        angular.forEach(items, function(item) {
+                            types[item._type] = 1;
+                        });
+
+                        var typesList = Object.keys(types);
+                        scope.type = typesList.length === 1 ? typesList[0] : null;
+                    }
                 }
             };
         }])
@@ -1241,7 +1264,8 @@
                 category: superdesk.MENU_MAIN,
                 label: gettext('Search'),
                 controller: SearchController,
-                templateUrl: asset.templateUrl('superdesk-search/views/search.html')
+                templateUrl: asset.templateUrl('superdesk-search/views/search.html'),
+                sideTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-sidenav.html'
             });
         }]);
 

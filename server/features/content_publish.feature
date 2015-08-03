@@ -355,7 +355,7 @@ Feature: Content Publishing
       }
       """
 
-    @auth
+   @auth
     Scenario: Deschedule an item
       Given empty "subscribers"
       And "desks"
@@ -376,10 +376,15 @@ Feature: Content Publishing
       """
       When we post to "/subscribers" with success
       """
+      [{
+        "name":"Digital","media_type":"media", "subscriber_type": "digital", "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "destinations":[{"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}]
+      },
       {
-        "name":"Channel 3","media_type":"media", "subscriber_type": "digital", "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "name":"Wire","media_type":"media", "subscriber_type": "wire", "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
         "destinations":[{"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}]
       }
+      ]
       """
       And we publish "#archive._id#" with "publish" type and "published" state
       Then we get OK response
@@ -388,18 +393,20 @@ Feature: Content Publishing
       {"_current_version": 2, "state": "scheduled"}
       """
       When we get "/publish_queue"
-      Then we get list with 1 items
+      Then we get list with 2 items
       """
       {
         "_items":
           [
-            {"destination":{"name":"Test"}, "publish_schedule":"2016-05-30T10:00:00+0000"}
+            {"destination":{"name":"Test"}, "publish_schedule":"2016-05-30T10:00:00+0000", "content_type": "text"},
+            {"destination":{"name":"Test"}, "publish_schedule":"2016-05-30T10:00:00+0000",
+            "content_type": "composite"}
           ]
       }
       """
       When we patch "/archive/123"
       """
-      {"publish_schedule": "2017-05-30T10:00:00+00:00"}
+      {"publish_schedule": null}
       """
       And we get "/archive"
       Then we get existing resource
@@ -408,15 +415,23 @@ Feature: Content Publishing
           "_items": [
               {
                   "_current_version": 3,
-                  "state": "in_progress"
+                  "state": "in_progress",
+                  "type": "text",
+                  "_id": "123"
+
+              },
+              {
+                  "_current_version": 3,
+                  "state": "in_progress",
+                  "type": "composite"
               }
           ]
       }
       """
       When we get "/publish_queue"
-      Then we get list with 1 items
+      Then we get list with 0 items
       When we get "/published"
-      Then we get list with 1 items
+      Then we get list with 0 items
 
     @auth
     Scenario: Deschedule an item fails if date is past
@@ -718,7 +733,7 @@ Feature: Content Publishing
       """
       [{"headline": "test", "_current_version": 1, "state": "fetched"}]
       """
-      And we login as user "foo" with password "bar"
+      And we login as user "foo" with password "bar" and user type "user"
       """
       {"user_type": "user", "email": "foo.bar@foobar.org"}
       """
@@ -769,14 +784,24 @@ Feature: Content Publishing
     @auth
     @provider
     Scenario: Publish a package
+        Given empty "archive"
         Given the "validators"
         """
-          [{"_id": "publish_composite", "act": "publish", "type": "composite", "schema":{}}]
+          [{"_id": "publish_composite", "act": "publish", "type": "composite", "schema":{}},
+          {"_id": "publish_picture", "act": "publish", "type": "picture", "schema":{}},
+          {"_id": "publish_text", "act": "publish", "type": "text", "schema":{}}]
         """
     	And empty "ingest"
     	And "desks"
         """
         [{"name": "Sports"}]
+        """
+        When we post to "/subscribers" with success
+        """
+        {
+        "name":"Channel 3","media_type":"media", "subscriber_type": "digital", "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "destinations":[{"name":"Test","format": "ninjs", "delivery_type":"PublicArchive","config":{"recipients":"test@test.com"}}]
+        }
         """
     	When we fetch from "reuters" ingest "tag_reuters.com_2014_newsml_KBN0FL0NM"
         And we post to "/ingest/#reuters.tag_reuters.com_2014_newsml_KBN0FL0NM#/fetch"
@@ -874,7 +899,7 @@ Feature: Content Publishing
       """
       {
           "type": "text",
-          "headline": "test1=2",
+          "headline": "test1",
           "slugline": "comics",
           "anpa_take_key": "Take=2",
           "subject":[{"qcode": "17004000", "name": "Statistics"}],
@@ -951,7 +976,7 @@ Feature: Content Publishing
       """
       {
           "type": "text",
-          "headline": "Take-1 headline=2",
+          "headline": "Take-1 headline",
           "slugline": "Take-1 slugline",
           "anpa_take_key": "Take=2",
           "state": "draft",
@@ -1041,7 +1066,7 @@ Feature: Content Publishing
       """
       {
           "type": "text",
-          "headline": "Take-1 headline=2",
+          "headline": "Take-1 headline",
           "slugline": "Take-1 slugline",
           "anpa_take_key": "Take=2",
           "state": "draft",
@@ -1243,7 +1268,7 @@ Feature: Content Publishing
       """
       {
           "type": "text",
-          "headline": "Take-1 headline=2",
+          "headline": "Take-1 headline",
           "slugline": "Take-1 slugline",
           "anpa_take_key": "Take=2",
           "state": "draft",
@@ -1266,7 +1291,7 @@ Feature: Content Publishing
       """
       {
           "type": "text",
-          "headline": "Take-1 headline=3",
+          "headline": "Take-1 headline",
           "slugline": "Take-1 slugline",
           "anpa_take_key": "Take=3",
           "state": "draft",
@@ -1298,26 +1323,30 @@ Feature: Content Publishing
                   "_id": "123",
                   "_current_version": 3,
                   "state": "published",
-                  "body_html": "Take-1"
+                  "body_html": "Take-1",
+                  "last_published_version": true
               },
               {
                   "_current_version": 6,
                   "state": "published",
                   "type": "composite",
                   "package_type": "takes",
-                  "body_html": "Take-1<br>Take-2<br>Take-3<br>"
+                  "body_html": "Take-1<br>Take-2<br>Take-3<br>",
+                  "last_published_version": true
               },
               {
                   "_id": "#TAKE2#",
                   "_current_version": 4,
                   "state": "published",
-                  "body_html": "Take-2"
+                  "body_html": "Take-2",
+                  "last_published_version": true
               },
               {
                   "_id": "#TAKE3#",
                   "_current_version": 4,
                   "state": "published",
-                  "body_html": "Take-3"
+                  "body_html": "Take-3",
+                  "last_published_version": true
               }
           ]
       }
@@ -1333,7 +1362,8 @@ Feature: Content Publishing
                   "_id": "123",
                   "_current_version": 3,
                   "state": "published",
-                  "body_html": "Take-1"
+                  "body_html": "Take-1",
+                  "last_published_version": false
               },
               {
                   "_id": "#archive.123.take_package#",
@@ -1341,7 +1371,8 @@ Feature: Content Publishing
                   "state": "published",
                   "type": "composite",
                   "package_type": "takes",
-                  "body_html": "Take-1<br>"
+                  "body_html": "Take-1<br>",
+                  "last_published_version": false
               },
               {
                   "_id": "#archive.123.take_package#",
@@ -1349,7 +1380,8 @@ Feature: Content Publishing
                   "state": "published",
                   "type": "composite",
                   "package_type": "takes",
-                  "body_html": "Take-1<br>Take-2<br>"
+                  "body_html": "Take-1<br>Take-2<br>",
+                  "last_published_version": false
               },
               {
                   "_id": "#archive.123.take_package#",
@@ -1357,34 +1389,40 @@ Feature: Content Publishing
                   "state": "published",
                   "type": "composite",
                   "package_type": "takes",
-                  "body_html": "Take-1<br>Take-2<br>Take-3<br>"
+                  "body_html": "Take-1<br>Take-2<br>Take-3<br>",
+                  "last_published_version": false
               },
               {
                   "_id": "#TAKE2#",
                   "_current_version": 4,
                   "state": "published",
-                  "body_html": "Take-2"
+                  "body_html": "Take-2",
+                  "last_published_version": false
               },
               {
                   "_id": "#TAKE3#",
                   "_current_version": 4,
                   "state": "published",
-                  "body_html": "Take-3"
+                  "body_html": "Take-3",
+                  "last_published_version": false
               },
               {
                   "_id": "123",
                   "_current_version": 5,
-                  "state": "killed"
+                  "state": "killed",
+                  "last_published_version": true
               },
               {
                   "_id": "#TAKE2#",
                   "_current_version": 5,
-                  "state": "killed"
+                  "state": "killed",
+                  "last_published_version": true
               },
               {
                   "_id": "#TAKE3#",
                   "_current_version": 5,
-                  "state": "killed"
+                  "state": "killed",
+                  "last_published_version": true
               },
               {
                   "_id": "#archive.123.take_package#",
@@ -1392,8 +1430,370 @@ Feature: Content Publishing
                   "state": "killed",
                   "type": "composite",
                   "package_type": "takes",
-                  "body_html": "Take-2<br>"
+                  "body_html": "Take-2<br>",
+                  "last_published_version": true
               }
           ]
       }
+      """
+
+    @auth @vocabulary
+    Scenario: Publish subsequent takes to same wire clients as published before.
+      Given the "validators"
+      """
+        [{"_id": "publish_text", "act": "publish", "type": "text", "schema":{}},
+         {"_id": "correct_text", "act": "correct", "type": "text", "schema":{}},
+         {"_id": "kill_text", "act": "kill", "type": "text", "schema":{}}]
+      """
+      And "desks"
+      """
+      [{"name": "Sports"}]
+      """
+      And "filter_conditions"
+      """
+      [{"name": "sport", "field": "headline", "operator": "like", "value": "soccer"}]
+      """
+      And "publish_filters"
+      """
+      [{"publish_filter": [{"expression": {"fc": ["#filter_conditions._id#"]}}], "name": "soccer-only"}]
+      """
+      When we post to "/subscribers" with "First_Wire_Subscriber" and success
+      """
+      [{
+        "name":"Soccer Client1","media_type":"media", "subscriber_type": "wire",
+        "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "publish_filter":{"filter_id":"#publish_filters._id#", "filter_type": "permitting"},
+        "destinations":[
+            {"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}
+          ]
+      }]
+      """
+      And we post to "/subscribers" with "Digital_Subscriber" and success
+      """
+      [{
+        "name":"Soccer Client Digital","media_type":"media", "subscriber_type": "digital",
+        "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "publish_filter":{"filter_id":"#publish_filters._id#", "filter_type": "permitting"},
+        "destinations":[
+            {"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}
+          ]
+      }]
+      """
+      And we post to "archive" with success
+      """
+      [{
+          "guid": "123",
+          "type": "text",
+          "headline": "Take-1 soccer headline",
+          "abstract": "Take-1 abstract",
+          "task": {
+              "user": "#CONTEXT_USER_ID#"
+          },
+          "body_html": "Take-1",
+          "state": "draft",
+          "slugline": "Take-1 slugline",
+          "urgency": "4",
+          "pubstatus": "usable",
+          "subject":[{"qcode": "17004000", "name": "Statistics"}],
+          "anpa_category": [{"qcode": "A", "name": "Sport"}],
+          "anpa_take_key": "Take"
+      }]
+      """
+      And we post to "/archive/123/move"
+      """
+      [{"task": {"desk": "#desks._id#", "stage": "#desks.incoming_stage#"}}]
+      """
+      Then we get OK response
+      When we post to "archive/123/link"
+      """
+      [{}]
+      """
+      Then we get next take as "TAKE2"
+      """
+      {
+          "type": "text",
+          "headline": "Take-1 soccer headline",
+          "slugline": "Take-1 slugline",
+          "anpa_take_key": "Take=2",
+          "state": "draft",
+          "original_creator": "#CONTEXT_USER_ID#"
+      }
+      """
+      When we patch "/archive/#TAKE2#"
+      """
+      {"body_html": "Take-2", "abstract": "Take-2 Abstract"}
+      """
+      And we post to "/archive/#TAKE2#/move"
+      """
+      [{"task": {"desk": "#desks._id#", "stage": "#desks.incoming_stage#"}}]
+      """
+      And we get "/archive"
+      Then we get list with 3 items
+      When we publish "123" with "publish" type and "published" state
+      Then we get OK response
+      When we get "/publish_queue"
+      Then we get list with 2 items
+      """
+      {
+          "_items": [
+            {
+              "item_id" : "123",
+              "publishing_action" : "published",
+              "content_type" : "text",
+              "state" : "pending",
+              "subscriber_id" : "#First_Wire_Subscriber#",
+              "headline" : "Take-1 soccer headline",
+              "item_version": 4
+            },
+            {
+              "item_id" : "#archive.123.take_package#",
+              "publishing_action" : "published",
+              "content_type" : "composite",
+              "state" : "pending",
+              "subscriber_id" : "#Digital_Subscriber#",
+              "headline" : "Take-1 soccer headline",
+              "item_version": 4
+            }
+          ]
+      }
+      """
+      When we post to "/subscribers" with "Second_Wire_Subscriber" and success
+      """
+      [{
+        "name":"Soccer Client2","media_type":"media", "subscriber_type": "wire",
+        "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "publish_filter":{"filter_id":"#publish_filters._id#", "filter_type": "permitting"},
+        "destinations":[
+            {"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}
+          ]
+      }]
+      """
+      When we publish "#TAKE2#" with "publish" type and "published" state
+      Then we get OK response
+      When we get "/publish_queue"
+      Then we get list with 4 items
+      """
+      {
+          "_items": [
+            {
+              "item_id" : "123",
+              "publishing_action" : "published",
+              "content_type" : "text",
+              "subscriber_id" : "#First_Wire_Subscriber#",
+              "item_version": 4
+            },
+            {
+              "item_id" : "#archive.123.take_package#",
+              "publishing_action" : "published",
+              "content_type" : "composite",
+              "subscriber_id" : "#Digital_Subscriber#",
+              "item_version": 4
+            },
+            {
+              "item_id" : "#TAKE2#",
+              "publishing_action" : "published",
+              "content_type" : "text",
+              "subscriber_id" : "#First_Wire_Subscriber#",
+              "item_version": 5
+            },
+            {
+              "item_id" : "#archive.123.take_package#",
+              "publishing_action" : "published",
+              "content_type" : "composite",
+              "subscriber_id" : "#Digital_Subscriber#",
+              "item_version": 5
+            }
+          ]
+      }
+      """
+      When we publish "#TAKE2#" with "correct" type and "corrected" state
+      Then we get OK response
+      When we get "/publish_queue"
+      Then we get list with 6 items
+      """
+      {
+          "_items": [
+            {
+              "item_id" : "123",
+              "publishing_action" : "published",
+              "content_type" : "text",
+              "subscriber_id" : "#First_Wire_Subscriber#",
+              "item_version": 4
+            },
+            {
+              "item_id" : "#archive.123.take_package#",
+              "publishing_action" : "published",
+              "content_type" : "composite",
+              "subscriber_id" : "#Digital_Subscriber#",
+              "item_version": 4
+            },
+            {
+              "item_id" : "#TAKE2#",
+              "publishing_action" : "published",
+              "content_type" : "text",
+              "subscriber_id" : "#First_Wire_Subscriber#",
+              "item_version": 5
+            },
+            {
+              "item_id" : "#archive.123.take_package#",
+              "publishing_action" : "published",
+              "content_type" : "composite",
+              "subscriber_id" : "#Digital_Subscriber#",
+              "item_version": 5
+            },
+            {
+              "item_id" : "#TAKE2#",
+              "publishing_action" : "corrected",
+              "content_type" : "text",
+              "subscriber_id" : "#First_Wire_Subscriber#",
+              "item_version": 6
+            },
+            {
+              "item_id" : "#archive.123.take_package#",
+              "publishing_action" : "corrected",
+              "content_type" : "composite",
+              "subscriber_id" : "#Digital_Subscriber#",
+              "item_version": 6
+            }
+          ]
+      }
+      """
+
+    @auth
+    Scenario: Reopen a published story by adding a new take
+      Given the "validators"
+      """
+        [{"_id": "publish_text", "act": "publish", "type": "text", "schema":{}}]
+      """
+      And "desks"
+      """
+      [{"name": "Sports"}]
+      """
+      When we post to "/subscribers" with success
+      """
+      {
+        "name":"Channel 3","media_type":"media", "subscriber_type": "digital", "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "destinations":[{"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}]
+      }
+      """
+      When we post to "archive" with success
+      """
+      [{
+          "guid": "123",
+          "type": "text",
+          "headline": "Take-1 headline",
+          "abstract": "Take-1 abstract",
+          "task": {
+              "user": "#CONTEXT_USER_ID#"
+          },
+          "body_html": "Take-1",
+          "state": "draft",
+          "slugline": "Take-1 slugline",
+          "urgency": "4",
+          "pubstatus": "usable",
+          "subject":[{"qcode": "17004000", "name": "Statistics"}],
+          "anpa_category": [{"qcode": "A", "name": "Sport"}],
+          "anpa_take_key": "Take"
+      }]
+      """
+      And we post to "/archive/123/move"
+      """
+      [{"task": {"desk": "#desks._id#", "stage": "#desks.incoming_stage#"}}]
+      """
+      Then we get OK response
+      When we publish "#archive._id#" with "publish" type and "published" state
+      And we post to "archive/123/link"
+      """
+      [{}]
+      """
+      Then we get next take as "TAKE"
+      """
+      {
+          "type": "text",
+          "headline": "Take-1 headline",
+          "slugline": "Take-1 slugline",
+          "anpa_take_key": "Take (reopens)",
+          "state": "draft",
+          "original_creator": "#CONTEXT_USER_ID#"
+      }
+      """
+      When we patch "/archive/#TAKE#"
+      """
+      {"body_html": "Take-2", "abstract": "Take-2 Abstract"}
+      """
+      And we post to "/archive/#TAKE#/move"
+      """
+      [{"task": {"desk": "#desks._id#", "stage": "#desks.incoming_stage#"}}]
+      """
+      And we get "/archive"
+      Then we get list with 1 items
+      When we publish "#TAKE#" with "publish" type and "published" state
+      Then we get OK response
+      When we get "/published"
+      Then we get existing resource
+      """
+      {
+          "_items": [
+              {
+                  "_id": "123",
+                  "_current_version": 3,
+                  "state": "published",
+                  "body_html": "Take-1"
+              },
+              {
+                  "_current_version": 5,
+                  "state": "published",
+                  "type": "composite",
+                  "package_type": "takes",
+                  "body_html": "Take-1<br>Take-2<br>"
+              },
+              {
+                  "_current_version": 4,
+                  "state": "published",
+                  "body_html": "Take-2"
+              }
+          ]
+      }
+      """
+
+    @auth
+    Scenario: Publish fails when publish validators fail
+      Given the "validators"
+      """
+        [{"_id": "publish_text", "type": "text", "act": "publish", "schema": {
+              "dateline": {
+                  "type": "dict",
+                  "required": true,
+                  "schema": {
+                      "located": {"type": "dict", "required": true},
+                      "date": {"type": "datetime", "required": true},
+                      "source": {"type": "string", "required": true},
+                      "text": {"type": "string", "required": true}
+                  }
+              }
+            }
+        }]
+      """
+      And "desks"
+      """
+      [{"name": "Sports"}]
+      """
+      And "archive"
+      """
+      [{"guid": "123", "type": "text", "headline": "test", "_current_version": 1, "state": "fetched",
+        "task": {"desk": "#desks._id#", "stage": "#desks.incoming_stage#", "user": "#CONTEXT_USER_ID#"},
+        "dateline": {},
+        "subject":[{"qcode": "17004000", "name": "Statistics"}], "body_html": "Test Document body"}]
+      """
+      When we post to "/subscribers" with success
+      """
+      {
+        "name":"Channel 3","media_type":"media", "subscriber_type": "digital", "sequence_num_settings":{"min" : 1, "max" : 10}, "email": "test@test.com",
+        "destinations":[{"name":"Test","format": "nitf", "delivery_type":"email","config":{"recipients":"test@test.com"}}]
+      }
+      """
+      And we publish "#archive._id#" with "publish" type and "published" state
+      Then we get error 400
+      """
+      {"_issues": {"validator exception": "[['DATELINE is a required field']]"}, "_status": "ERR"}
       """

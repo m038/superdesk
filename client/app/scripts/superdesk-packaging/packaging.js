@@ -147,7 +147,6 @@
     PackagingController.$inject = ['$scope', 'item', 'packages', 'api', 'modal', 'notify', 'gettext', 'superdesk'];
     function PackagingController($scope, item, packages, api, modal, notify, gettext, superdesk) {
         $scope.origItem = item;
-        $scope.widget_target = 'packages';
         $scope.action = 'edit';
 
         $scope.lock = function() {
@@ -468,7 +467,7 @@
             link: function(scope) {
                 scope.data = null;
                 scope.error = null;
-                scope.type = scope.item.type || scope.item.itemClass.split(':')[1];
+
                 if (scope.item.location) {
                     api[scope.item.location].getById(scope.item.residRef)
                     .then(function(result) {
@@ -617,6 +616,7 @@
                 label: gettext('Packaging'),
                 templateUrl: 'scripts/superdesk-packaging/views/packaging.html',
                 topTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-topnav.html',
+                sideTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-sidenav.html',
                 controller: PackagingController,
                 filters: [{action: 'author', type: 'package'}],
                 resolve: {
@@ -662,6 +662,7 @@
                 label: gettext('Packaging Read Only'),
                 templateUrl: 'scripts/superdesk-packaging/views/packaging.html',
                 topTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-topnav.html',
+                sideTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-sidenav.html',
                 controller: PackagingController,
                 filters: [{action: 'read_only', type: 'content_package'}],
                 resolve: {
@@ -693,7 +694,7 @@
                     return item ? item.state !== 'killed' && item.package_type !== 'takes' : true;
                 }
             })
-            .activity('package.item', {
+            .activity('packageitem', {
                 label: gettext('Package item'),
                 priority: 5,
                 icon: 'package-plus',
@@ -712,7 +713,8 @@
                 ],
                 additionalCondition:['authoring', 'item', function(authoring, item) {
                     return authoring.itemActions(item).package_item;
-                }]
+                }],
+                group: 'packaging'
             });
     }])
     .config(['apiProvider', function(apiProvider) {

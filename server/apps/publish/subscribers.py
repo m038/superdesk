@@ -134,6 +134,13 @@ class SubscribersService(BaseService):
         self._validate_seq_num_settings(updates)
 
     def _get_subscribers_by_filter_condition(self, filter_condition):
+        """
+        Searches all subscribers that has a publish filter with the given filter condition
+        If filter condition is used in a global filter then it returns all
+        subscribers that not disabled the global filter.
+        :param filter_condition: Filter condition to test
+        :return: List of subscribers
+        """
         req = ParsedRequest()
         all_subscribers = list(super().get(req=req, lookup=None))
         selected_subscribers = {}
@@ -146,14 +153,15 @@ class SubscribersService(BaseService):
             for pf in existing_publish_filters:
                 if pf.get('is_global', False):
                     for s in all_subscribers:
-                        if any(gf for gf in s.get('global_filters', []) if str(s['_id']) in gf):
+                        gfs = s.get('global_filters', {})
+                        if gfs.get(str(pf['_id']), True):
                             selected_subscribers[s['_id']] = s
-                else:
-                    for s in all_subscribers:
-                        if s.get('publish_filter') and \
-                            'filter_id' in s['publish_filter'] and \
-                                s['publish_filter']['filter_id'] == pf['_id']:
-                            selected_subscribers[s['_id']] = s
+
+                for s in all_subscribers:
+                    if s.get('publish_filter') and \
+                        'filter_id' in s['publish_filter'] and \
+                            s['publish_filter']['filter_id'] == pf['_id']:
+                        selected_subscribers[s['_id']] = s
 
         return list(selected_subscribers.values())
 

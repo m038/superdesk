@@ -295,7 +295,7 @@ angular.module('superdesk.workspace.tasks', [])
         controller: TasksController,
         templateUrl: 'scripts/superdesk-dashboard/workspace-tasks/views/workspace-tasks.html',
         topTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-topnav.html',
-        beta: true,
+        sideTemplateUrl: 'scripts/superdesk-dashboard/views/workspace-sidenav.html',
         filters: [{action: 'view', type: 'task'}]
     });
 

@@ -51,15 +51,22 @@ function Content() {
     };
 
     this.actionOnItem = function(action, item) {
-        var crtItem = this.getItem(item);
-        browser.actions().mouseMove(crtItem).perform();
-        return crtItem.element(by.css('[title="' + action + '"]')).click();
+        var menu = this.openItemMenu(item);
+        return menu.element(by.partialLinkText(action)).click();
+    };
+
+    this.openItemMenu = function(item) {
+        var itemElem = this.getItem(item);
+        browser.actions().mouseMove(itemElem).perform();
+        itemElem.element(by.className('icon-dots-vertical')).click();
+        return element(by.css('.dropdown-menu.active'));
     };
 
     this.checkMarkedForHighlight = function(highlight, item) {
         var crtItem = this.getItem(item);
         expect(crtItem.element(by.className('icon-star-color')).isDisplayed()).toBeTruthy();
-        expect(crtItem.element(by.className('icon-star-color')).getAttribute('tooltip-html-unsafe')).toContain(highlight);
+        expect(crtItem.element(by.className('icon-star-color')).getAttribute('tooltip-html-unsafe'))
+            .toContain(highlight);
     };
 
     this.getCount = function () {

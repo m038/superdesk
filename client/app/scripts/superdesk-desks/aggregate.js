@@ -19,9 +19,12 @@
         this.loading = true;
         this.selected = null;
         this.groups = [];
+        this.spikeGroups = null;
         this.allStages = null;
+        this.allDesks = null;
         this.modalActive = false;
         this.searchLookup = {};
+        this.deskLookup = {};
         this.stageLookup = {};
 
         desks.initialize()
@@ -118,7 +121,77 @@
         };
 
         this.search = function(query) {
-            this.query = query;
+            _.each(this.groups, function(item) {
+                item.query = query;
+            });
+            if (this.allStages) {
+                _.each(this.allStages, function(item) {
+                    item.query = query;
+                });
+            }
+            if (this.spikeGroups) {
+                _.each(this.spikeGroups, function(item) {
+                    item.query = query;
+                });
+            }
+            if (this.allDesks) {
+                _.each(this.allDesks, function(item) {
+                    item.query = query;
+                });
+            }
+        };
+
+        this.resetSearch = function() {
+            _.each(this.groups, function(item) {
+                item.query = null;
+            });
+            if (this.allStages) {
+                _.each(this.allStages, function(item) {
+                    item.query = null;
+                });
+            }
+            if (this.spikeGroups) {
+                _.each(this.spikeGroups, function(item) {
+                    item.query = null;
+                });
+            }
+            if (this.allDesks) {
+                _.each(this.allDesks, function(item) {
+                    item.query = null;
+                });
+            }
+        };
+
+        /**
+         * Creates a list of spike desk groups based on the setting from agg:view property.
+         * If a stage is selected the correspondent desk will appear in the result list.
+         * If agg:view is not set, all desks will be returned
+         * @return [{_id: string, type: string, header:string}]
+         */
+        this.getSpikeGroups = function() {
+            if (this.groups.length > 0) {
+                if (!this.spikeGroups) {
+                    var spikeDesks = {};
+                    _.each(this.groups, function(item, index) {
+                        if (item.type === 'stage') {
+                            var stage = self.stageLookup[item._id];
+                            spikeDesks[stage.desk] = self.deskLookup[stage.desk].name;
+                        }
+                    });
+
+                    this.spikeGroups = Object.keys(spikeDesks).map(function(key) {
+                        return {_id: key, type: 'spike', header: spikeDesks[key]};
+                    });
+                }
+                return this.spikeGroups;
+            }
+
+            if (!this.allDesks) {
+                this.allDesks = Object.keys(this.deskLookup).map(function(key) {
+                    return {_id: key, type: 'spike'};
+                });
+            }
+            return this.allDesks;
         };
 
         this.getGroups = function() {

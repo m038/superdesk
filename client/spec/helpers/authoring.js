@@ -7,9 +7,12 @@ function Authoring() {
 
     this.lock = element(by.css('[ng-click="lock()"]'));
     this.publish = element(by.css('[ng-click="publish()"]'));
+    this.close_button = element(by.css('[ng-click="close()"]'));
 
     /**
      * Send item to given desk
+     *
+     * @param {string} desk Desk name
      */
     this.sendTo = function sendTo(desk) {
         var sidebar = element(by.css('.send-to-pane')),
@@ -28,7 +31,7 @@ function Authoring() {
     };
 
     this.close = function() {
-        return element(by.css('[ng-click="close()"]')).click();
+        return this.close_button.click();
     };
 
     this.save = function() {
@@ -127,7 +130,8 @@ function Authoring() {
 
     this.checkMarkedForHighlight = function(highlight, item) {
         expect(element(by.className('icon-star-color')).isDisplayed()).toBeTruthy();
-        expect(element(by.className('icon-star-color')).getAttribute('tooltip-html-unsafe')).toContain(highlight);
+        expect(element(by.className('icon-star-color')).getAttribute('tooltip-html-unsafe'))
+            .toContain(highlight);
     };
 
     this.writeText = function (text) {

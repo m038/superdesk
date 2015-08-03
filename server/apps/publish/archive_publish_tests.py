@@ -28,6 +28,8 @@ from superdesk import get_resource_service
 import superdesk
 from apps.archive.archive import SOURCE as ARCHIVE
 from settings import URL_PREFIX
+from apps.content import TAKES_PACKAGE, PACKAGE_TYPE
+from apps.publish.published_item import LAST_PUBLISHED_VERSION
 
 
 class ArchivePublishTestCase(TestCase):
@@ -80,7 +82,7 @@ class ArchivePublishTestCase(TestCase):
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
                           'ednote': 'Andrew Marwood contributed to this article',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                           'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                                       {'qcode': '04001002', 'name': 'Weather'}],
@@ -99,7 +101,7 @@ class ArchivePublishTestCase(TestCase):
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
                           'ednote': 'Andrew Marwood contributed to this article',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                           'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                                       {'qcode': '04001002', 'name': 'Weather'}],
@@ -120,7 +122,7 @@ class ArchivePublishTestCase(TestCase):
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
                           'ednote': 'Andrew Marwood contributed to this article killed',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                           'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                                       {'qcode': '04001002', 'name': 'Weather'}],
@@ -140,7 +142,7 @@ class ArchivePublishTestCase(TestCase):
                           'pubstatus': 'done',
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'slugline': 'taking takes',
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                           'subject': [{'qcode': '17004000', 'name': 'Statistics'},
@@ -162,7 +164,7 @@ class ArchivePublishTestCase(TestCase):
                           'pubstatus': 'done',
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'slugline': 'taking takes',
                           'linked_in_packages': [{"package": "7", "package_type": "takes"}],
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
@@ -237,7 +239,7 @@ class ArchivePublishTestCase(TestCase):
                           'pubstatus': 'done',
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'slugline': 'taking takes',
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                           'subject': [{'qcode': '17004000', 'name': 'Statistics'},
@@ -259,7 +261,7 @@ class ArchivePublishTestCase(TestCase):
                           'pubstatus': 'usable',
                           'firstcreated': utcnow(),
                           'byline': 'By Alan Karben',
-                          'dateline': 'Sydney',
+                          'dateline': {'located': {'city': 'Sydney'}},
                           'slugline': 'Police Missing',
                           'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                           'subject': [{'qcode': '17004000', 'name': 'Statistics'},
@@ -279,7 +281,9 @@ class ArchivePublishTestCase(TestCase):
             self.filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), "validators.json")
             self.json_data = [
                 {"_id": "kill_text", "act": "kill", "type": "text", "schema": {"headline": {"type": "string"}}},
-                {"_id": "publish_text", "act": "publish", "type": "text", "schema": {}}]
+                {"_id": "publish_text", "act": "publish", "type": "text", "schema": {}},
+                {"_id": "correct_text", "act": "correct", "type": "text", "schema": {}}
+            ]
             self.article_versions = self.__init_article_versions()
 
             with open(self.filename, "w+") as file:
@@ -301,7 +305,7 @@ class ArchivePublishTestCase(TestCase):
                  'pubstatus': 'usable',
                  'firstcreated': utcnow(),
                  'byline': 'By Alan Karben',
-                 'dateline': 'Sydney',
+                 'dateline': {'located': {'city': 'Sydney'}},
                  'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                  'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                              {'qcode': '04001002', 'name': 'Weather'}],
@@ -317,7 +321,7 @@ class ArchivePublishTestCase(TestCase):
                  'pubstatus': 'usable',
                  'firstcreated': utcnow(),
                  'byline': 'By Alan Karben',
-                 'dateline': 'Sydney',
+                 'dateline': {'located': {'city': 'Sydney'}},
                  'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                  'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                              {'qcode': '04001002', 'name': 'Weather'}],
@@ -334,7 +338,7 @@ class ArchivePublishTestCase(TestCase):
                  'firstcreated': utcnow(),
                  'byline': 'By Alan Karben',
                  'ednote': 'Andrew Marwood contributed to this article',
-                 'dateline': 'Sydney',
+                 'dateline': {'located': {'city': 'Sydney'}},
                  'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                  'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                              {'qcode': '04001002', 'name': 'Weather'}],
@@ -352,7 +356,7 @@ class ArchivePublishTestCase(TestCase):
                  'firstcreated': utcnow(),
                  'byline': 'By Alan Karben',
                  'ednote': 'Andrew Marwood contributed to this article',
-                 'dateline': 'Sydney',
+                 'dateline': {'located': {'city': 'Sydney'}},
                  'keywords': ['Student', 'Crime', 'Police', 'Missing'],
                  'subject': [{'qcode': '17004000', 'name': 'Statistics'},
                              {'qcode': '04001002', 'name': 'Weather'}],
@@ -790,10 +794,10 @@ class ArchivePublishTestCase(TestCase):
         with self.app.app_context():
             ValidatorsPopulateCommand().run(self.filename)
             updates = {'targeted_for': [{'name': 'New South Wales', 'allow': True}]}
-            get_resource_service('archive').patch(id=self.articles[9][config.ID_FIELD], updates=updates)
+            doc_id = self.articles[9][config.ID_FIELD]
+            get_resource_service('archive').patch(id=doc_id, updates=updates)
 
-            doc = get_resource_service('archive').find_one(req=None, _id=self.articles[9][config.ID_FIELD])
-            get_resource_service('archive_publish').patch(id=doc['_id'], updates={'state': 'published'})
+            get_resource_service('archive_publish').patch(id=doc_id, updates={'state': 'published'})
 
             queue_items = self.app.data.find('publish_queue', None, None)
             self.assertEqual(4, queue_items.count())
@@ -801,3 +805,42 @@ class ArchivePublishTestCase(TestCase):
             self.assertIn(queue_items[0]["subscriber_id"], expected_subscribers)
             self.assertIn(queue_items[1]["subscriber_id"], expected_subscribers)
             self.assertIn(queue_items[2]["subscriber_id"], expected_subscribers)
+
+    def test_maintain_latest_version_for_published(self):
+        with self.app.app_context():
+
+            def get_publish_items(item_id, last_version):
+                query = {'query': {'filtered': {'filter': {'and': [
+                        {'term': {'item_id': item_id}}, {'term': {LAST_PUBLISHED_VERSION: last_version}}
+                ]}}}}
+                request = ParsedRequest()
+                request.args = {'source': json.dumps(query)}
+                return self.app.data.find('published', req=request, lookup=None)
+
+            ValidatorsPopulateCommand().run(self.filename)
+            get_resource_service('archive').patch(id=self.articles[1][config.ID_FIELD],
+                                                  updates={'publish_schedule': None})
+
+            doc = get_resource_service('archive').find_one(req=None, _id=self.articles[1][config.ID_FIELD])
+            get_resource_service('archive_publish').patch(id=doc[config.ID_FIELD], updates={'state': 'published'})
+
+            queue_items = self.app.data.find('publish_queue', None, None)
+            self.assertEqual(5, queue_items.count())
+            published_items = self.app.data.find('published', None, None)
+            self.assertEqual(2, published_items.count())
+            published_digital_doc = next((item for item in published_items
+                                          if item.get(PACKAGE_TYPE) == TAKES_PACKAGE), None)
+            published_doc = next((item for item in published_items
+                                  if item.get('item_id') == doc[config.ID_FIELD]), None)
+            self.assertEqual(published_doc[LAST_PUBLISHED_VERSION], True)
+            self.assertEqual(published_digital_doc[LAST_PUBLISHED_VERSION], True)
+
+            get_resource_service('archive_correct').patch(id=doc[config.ID_FIELD], updates={'state': 'corrected'})
+            queue_items = self.app.data.find('publish_queue', None, None)
+            self.assertEqual(10, queue_items.count())
+            published_items = self.app.data.find('published', None, None)
+            self.assertEqual(4, published_items.count())
+            last_published_digital = get_publish_items(published_digital_doc['item_id'], True)
+            self.assertEqual(1, last_published_digital.count())
+            last_published = get_publish_items(published_doc['item_id'], True)
+            self.assertEqual(1, last_published.count())
