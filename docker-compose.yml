@@ -49,6 +49,7 @@ publicapi:
    - elastic
   environment:
    - REDIS=1
+   - PUBLICAPI_URL=http://publicapi:5050
    - PUBLICAPI_MONGO_URI=mongodb://mongodb:27017/publicapi
    - MONGO_URI=mongodb://mongodb:27017/publicapi
    - ELASTICSEARCH_URL=http://elastic:9200
